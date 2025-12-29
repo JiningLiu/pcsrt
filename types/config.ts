@@ -1,11 +1,12 @@
+// Program configuration
 export class Configuration {
     auth: boolean = false;
-    camera: CameraConfiguration = new CameraConfiguration();
-    stream: StreamConfiguration = new StreamConfiguration();
-
     startStreamOnLaunch: boolean = false;
     verbose: boolean = false;
     port: number = 5483;
+
+    camera: CameraConfiguration = new CameraConfiguration();
+    stream: StreamConfiguration = new StreamConfiguration();
 
     static fromJSON(json: Partial<Configuration>): Configuration {
         const config = Object.assign(new Configuration(), json);
@@ -50,6 +51,64 @@ gst-launch-1.0 -e \
     mux.
         `.replace(/\\\n\s*/g, '').trim()
     }
+}
+
+export enum ConfigurationOption {
+    AUTH_ENABLED = 'auth',
+    START_STREAM_ON_LAUNCH = 'startStreamOnLaunch',
+    VERBOSE = 'verbose',
+    PORT = 'port',
+
+    // Camera
+    CAMERA_AE_ENABLE = 'camera.ae-enable',
+    CAMERA_AE_CONSTRAINT_MODE = 'camera.ae-constraint-mode',
+    CAMERA_AE_EXPOSURE_MODE = 'camera.ae-exposure-mode',
+    CAMERA_AE_METERING_MODE = 'camera.ae-metering-mode',
+    CAMERA_AE_FLICKER_PERIOD = 'camera.ae-flicker-period',
+    CAMERA_EXPOSURE_VALUE = 'camera.exposure-value',
+    CAMERA_EXPOSURE_TIME_MODE = 'camera.exposure-time-mode',
+    CAMERA_EXPOSURE_TIME = 'camera.exposure-time',
+    CAMERA_ANALOGUE_GAIN_MODE = 'camera.analogue-gain-mode',
+    CAMERA_ANALOGUE_GAIN = 'camera.analogue-gain',
+    CAMERA_DIGITAL_GAIN = 'camera.digital-gain',
+    CAMERA_AF_MODE = 'camera.af-mode',
+    CAMERA_AF_METERING = 'camera.af-metering',
+    CAMERA_AF_RANGE = 'camera.af-range',
+    CAMERA_AF_SPEED = 'camera.af-speed',
+    CAMERA_AF_WINDOWS = 'camera.af-windows',
+    CAMERA_LENS_POSITION = 'camera.lens-position',
+    CAMERA_AWB_ENABLE = 'camera.awb-enable',
+    CAMERA_AWB_MODE = 'camera.awb-mode',
+    CAMERA_COLOUR_GAINS = 'camera.colour-gains',
+    CAMERA_COLOUR_CORRECTION_MATRIX = 'camera.colour-correction-matrix',
+    CAMERA_BRIGHTNESS = 'camera.brightness',
+    CAMERA_CONTRAST = 'camera.contrast',
+    CAMERA_SATURATION = 'camera.saturation',
+    CAMERA_SHARPNESS = 'camera.sharpness',
+    CAMERA_GAMMA = 'camera.gamma',
+    CAMERA_SCALER_CROP = 'camera.scaler-crop',
+
+    // Stream
+    STREAM_SRT_PORT = 'stream.srtPort',
+    STREAM_SRT_LATENCY = 'stream.srtLatency',
+    STREAM_FRAME_WIDTH = 'stream.frameWidth',
+    STREAM_FRAME_HEIGHT = 'stream.frameHeight',
+    STREAM_FRAME_RATE = 'stream.frameRate',
+    STREAM_QUEUE_MAX_SIZE_BUFFERS = 'stream.queueMaxSizeBuffers',
+    STREAM_QUEUE_FLUSH_ON_EOS = 'stream.queueFlushOnEos',
+    STREAM_QUEUE_MAX_SIZE_TIME = 'stream.queueMaxSizeTime',
+    STREAM_X264ENC_TUNE = 'stream.x264encTune',
+    STREAM_X264ENC_SPEED_PRESET = 'stream.x264encSpeedPreset',
+    STREAM_X264ENC_BITRATE = 'stream.x264encBitrate',
+    STREAM_X264ENC_BFRAMES = 'stream.x264encBFrames',
+    STREAM_X264ENC_RC_LOOKAHEAD = 'stream.x264encRcLookahead',
+    STREAM_X264ENC_SYNC_LOOKAHEAD = 'stream.x264encSyncLookahead',
+    STREAM_X264ENC_SLICED_THREADS = 'stream.x264encSlicedThreads',
+    STREAM_X264ENC_THREADS = 'stream.x264encThreads',
+    STREAM_ALSASRC_DEVICE = 'stream.alsasrcDevice',
+    STREAM_AUDIO_SAMPLE_RATE = 'stream.audioSampleRate',
+    STREAM_AUDIO_CHANNELS = 'stream.audioChannels',
+    STREAM_AUDIO_BITRATE = 'stream.audioBitrate',
 }
 
 // Camera configuration
@@ -114,6 +173,10 @@ export class AfWindow {
     width?: number;
     height?: number;
 
+    static fromJSON(json: Partial<AfWindow>): AfWindow {
+        return Object.assign(new AfWindow(), json);
+    }
+
     toGstValueArray(): string {
         if (this.x === undefined && this.y === undefined && this.width === undefined && this.height === undefined) {
             return "<>";
@@ -137,6 +200,10 @@ export class ColourGains {
     red?: number;
     blue?: number;
 
+    static fromJSON(json: Partial<ColourGains>): ColourGains {
+        return Object.assign(new ColourGains(), json);
+    }
+
     toGstValueArray(): string {
         if (this.red === undefined && this.blue === undefined) {
             return "<>";
@@ -147,6 +214,10 @@ export class ColourGains {
 
 export class ColourCorrectionMatrix {
     matrix?: [[number, number, number], [number, number, number], [number, number, number]];
+
+    static fromJSON(json: Partial<ColourCorrectionMatrix>): ColourCorrectionMatrix {
+        return Object.assign(new ColourCorrectionMatrix(), json);
+    }
 
     toGstValueArray(): string {
         if (this.matrix === undefined) {
@@ -161,6 +232,10 @@ export class ScalerCrop {
     y?: number;
     width?: number;
     height?: number;
+
+    static fromJSON(json: Partial<ScalerCrop>): ScalerCrop {
+        return Object.assign(new ScalerCrop(), json);
+    }
 
     toGstValueArray(): string {
         if (this.x === undefined && this.y === undefined && this.width === undefined && this.height === undefined) {
@@ -201,10 +276,10 @@ export class CameraConfiguration {
 
     static fromJSON(json: Partial<CameraConfiguration>): CameraConfiguration {
         const config = Object.assign(new CameraConfiguration(), json);
-        config["colour-gains"] = Object.assign(new ColourGains(), config["colour-gains"]);
-        config["colour-correction-matrix"] = Object.assign(new ColourCorrectionMatrix(), config["colour-correction-matrix"]);
-        config["scaler-crop"] = Object.assign(new ScalerCrop(), config["scaler-crop"]);
-        config["af-windows"] = (config["af-windows"] || []).map(window => Object.assign(new AfWindow(), window));
+        config["colour-gains"] = ColourGains.fromJSON(config["colour-gains"]);
+        config["colour-correction-matrix"] = ColourCorrectionMatrix.fromJSON(config["colour-correction-matrix"]);
+        config["scaler-crop"] = ScalerCrop.fromJSON(config["scaler-crop"]);
+        config["af-windows"] = (config["af-windows"] || []).map(window => AfWindow.fromJSON(window));
         return config;
     }
 

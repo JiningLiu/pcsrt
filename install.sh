@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# enables data over usb-c on pi
-sudo bash -c 'echo -e "\ndtoverlay=dwc2,dr_mode=host" >> /boot/firmware/config.txt'
-
 # install libcamera and gstreamer packages
 readonly PCSRT_GSTREAMER_DEBS="$XDG_RUNTIME_DIR/pcsrt/gstreamer_debs"
 
@@ -22,4 +19,13 @@ sudo mkdir -p /opt/pcsrt/gstreamer
 for pkg in *.deb; do
     sudo dpkg-deb -x "$pkg" /opt/pcsrt/gstreamer/
 done
+
 cd
+sudo rm -r "$PCSRT_GSTREAMER_DEBS"
+
+# install pcsrt binary
+TAG=$(curl -s https://api.github.com/repos/JiningLiu/pcsrt/releases/latest | jq -r '.tag_name')
+sudo curl -fSL https://github.com/JiningLiu/pcsrt/releases/download/$TAG/pcsrt -o /usr/bin/pcsrt
+sudo chmod +x /usr/bin/pcsrt
+
+echo "Installation complete! You can now run 'pcsrt' from the terminal."
