@@ -1,7 +1,6 @@
-# pcsrt
+# 📹 pcsrt 🔴
 
-The ultimate scorer, **redefined**.  
-presented by **20240 Slingshot**
+A customizable Raspberry Pi-based live stream solution over SRT.
 
 > [!NOTE]
 > 🚧 This project is in early development.
