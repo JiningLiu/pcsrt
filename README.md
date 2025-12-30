@@ -25,7 +25,7 @@ Make sure to configure your `/boot/firmware/config.txt` correctly for your perip
 An example systemd service is available at [`pcsrt-example.service`](pcsrt-example.service).
 
 ```bash
-sudo cp pcsrt-example.service /etc/systemd/system/pcsrt.service
+sudo curl -fSL https://raw.githubusercontent.com/JiningLiu/pcsrt/HEAD/pcsrt-example.service -o /etc/systemd/system/pcsrt.service
 ```
 
 Before enabling the service, make sure to change the `User` field to your desired runtime user. If you encounter errors, check the service logs to make sure the runtime user has the required directory and file permissions.
