@@ -1,20 +1,50 @@
-import { env, file, argv, serve } from "bun";
+import { env, file, argv, serve, spawn } from "bun";
 import { createHash } from "crypto";
 
 import { $, ProcessPromise } from 'zx'
 import chalk from 'chalk';
-import { input, password, select } from "@inquirer/prompts";
+import { confirm, input, password, select } from "@inquirer/prompts";
 
 import { Configuration } from "./types/config.js";
 import type { User } from "./types/auth.js";
 import { log } from "./helpers/log.js";
 import { setConfiguration } from "./helpers/config.js";
 
+// Uninstaller
+if (argv.includes('--uninstall')) {
+    if (await confirm({
+        message: "Are you sure you want to uninstall pcsrt? This will remove all pcsrt files, including its configurations and dependencies.",
+        default: false,
+    })) {
+        $`
+        sudo rm -f /usr/bin/pcsrt
+        sudo rm -rf /opt/pcsrt
+
+        sudo rm -rf ~/.config/pcsrt
+        sudo rm -rf ~/.cache/gstreamer-1.0
+        sudo rm -f /tmp/pcsrt_gst_processes.json
+        sudo rm -rf "/tmp/pcsrt_debs"
+
+        echo "pcsrt and its dependencies have been uninstalled."
+        `.nothrow();
+        process.exit(0);
+    }
+}
+
 // Environment setup
 const HOME = env.HOME || env.USERPROFILE || await $`echo $HOME`.text() || "~";
-env.PATH = `/opt/pcsrt/gstreamer/usr/bin:${env.PATH}`
-env.LD_LIBRARY_PATH = `/opt/pcsrt/gstreamer/usr/lib/aarch64-linux-gnu:${env.LD_LIBRARY_PATH || ""}`
-env.GST_PLUGIN_PATH = "/opt/pcsrt/gstreamer/usr/lib/aarch64-linux-gnu/gstreamer-1.0"
+env.PATH = `/opt/pcsrt/usr/bin:${env.PATH}`
+
+const PCSRT_LIBS = [
+    "/opt/pcsrt/usr/lib",
+    "/opt/pcsrt/usr/lib/aarch64-linux-gnu",
+    "/opt/pcsrt/usr/lib/aarch64-linux-gnu/gstreamer-1.0",
+    "/opt/pcsrt/usr/lib/aarch64-linux-gnu/pulseaudio",
+].join(":");
+env.LD_LIBRARY_PATH = `${PCSRT_LIBS}${env.LD_LIBRARY_PATH ? ":" + env.LD_LIBRARY_PATH : ""}`;
+
+env.GST_PLUGIN_PATH = "/opt/pcsrt/usr/lib/aarch64-linux-gnu/gstreamer-1.0"
+env.FONTCONFIG_PATH = "/opt/pcsrt/etc/fonts";
 
 // Load authentication file
 const authFilePath = `${HOME}/.config/pcsrt/auth.json`;
@@ -45,7 +75,7 @@ if (argv.includes('--add-user') || argv.includes('-au')) {
     });
 
     const pwd = await password({
-        message: `Enter password for ${username}:`,
+        message: `Enter password for ${username}: `,
         mask: '*',
     });
 
@@ -81,7 +111,7 @@ const configFilePath = `${HOME}/.config/pcsrt/config.json`;
 let configFile = file(configFilePath);
 
 if (!await configFile.exists()) {
-    log(chalk.yellow(`Configuration file not found, creating a new one at ${configFilePath}`));
+    log(chalk.yellow(`Configuration file not found, creating a new one at ${configFilePath} `));
 
     await configFile.write(JSON.stringify(new Configuration()));
     configFile = file(configFilePath);
@@ -100,7 +130,7 @@ if (argv.includes('--set-config') || argv.includes('-sc')) {
                 await setConfiguration(config, configFile, JSON.parse(input));
                 return true;
             } catch (e) {
-                return `${e}`;
+                return `${e} `;
             }
         }
     });
@@ -137,9 +167,9 @@ async function killExistingGstProcesses() {
     for (const pid of existingGstProcesses) {
         try {
             process.kill(pid, "SIGKILL");
-            log(chalk.green(`Killed process ${pid}`));
+            log(chalk.green(`Killed process ${pid} `));
         } catch (e) {
-            log(chalk.red(`Failed to kill process ${pid}: ${e}`));
+            log(chalk.red(`Failed to kill process ${pid}: ${e} `));
         }
     }
     await existingGstProcessesFile.write(JSON.stringify([]));
@@ -153,7 +183,7 @@ let gstProcess: ProcessPromise;
 async function startGstPipeline(): Promise<boolean> {
     await filterExistingGstProcesses();
     if (existingGstProcesses.length > 0) {
-        log(chalk.yellow(`Found existing GStreamer processes: ${existingGstProcesses.join(", ")}`));
+        log(chalk.yellow(`Found existing GStreamer processes: ${existingGstProcesses.join(", ")} `));
         return false;
     }
 
@@ -225,11 +255,11 @@ async function startup() {
 
             async message(ws, message) {
                 const msg = message.toString().trim();
-                log(msg, `${ws.data.user}@${ws.remoteAddress}`);
+                log(msg, `${ws.data.user} @${ws.remoteAddress} `);
 
                 switch (msg) {
                     case "START":
-                        ws.send(`${await startGstPipeline()}`);
+                        ws.send(`${await startGstPipeline()} `);
                         return;
                     case "STOP":
                         try {
@@ -257,7 +287,7 @@ async function startup() {
                             }
                         } catch { }
 
-                        ws.send(`${await startGstPipeline()}`);
+                        ws.send(`${await startGstPipeline()} `);
                         return;
                     case "KILLALL":
                         await killExistingGstProcesses();
@@ -268,7 +298,7 @@ async function startup() {
                         return;
                     case "URIS":
                         let ipAddresses: string[] = [];
-                        for (const ip of (await $`hostname -I`.text()).trim().split(" ")) {
+                        for (const ip of (await $`hostname - I`.text()).trim().split(" ")) {
                             ipAddresses.push(ip.includes(":") ? `[${ip}]` : ip);
                         }
 
