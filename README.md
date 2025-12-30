@@ -1,12 +1,9 @@
 # 📹 pcsrt 🔴
 
-A customizable Raspberry Pi-based live stream solution over SRT.
+A customizable Raspberry Pi-based live-streaming solution over SRT.
 
 > [!NOTE]
 > 🚧 This project is in early development.
-
-> [!WARNING]
-> This is the **development** branch. Please ensure you are on the right branch.
 
 ## Usage
 

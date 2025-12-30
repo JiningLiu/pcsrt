@@ -348,7 +348,7 @@ export class StreamConfiguration {
     readonly srtHost: string = "0.0.0.0";
     srtPort: number = 20240;
     readonly srtMode: SrtMode = SrtMode.LISTENER;
-    srtLatency: number = 200;
+    srtLatency: number = 20;
 
     // caps spec
     readonly cameraCapability: string = "video/x-raw";

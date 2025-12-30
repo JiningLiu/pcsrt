@@ -1,0 +1,33 @@
+name: "build-for-release"
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build-for-release:
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+
+      - name: install dependencies
+        run: bun install
+
+      - name: build for release
+        run: bun run build
+
+      - name: upload release binary
+        uses: actions/upload-artifact@v6
+        with:
+          name: pcsrt
+          path: build/pcsrt
+          if-no-files-found: error

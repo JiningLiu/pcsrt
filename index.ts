@@ -1,4 +1,4 @@
-import { env, file, argv, serve, spawn } from "bun";
+import { env, file, argv, serve } from "bun";
 import { createHash } from "crypto";
 
 import { $, ProcessPromise } from 'zx'
@@ -9,6 +9,8 @@ import { Configuration } from "./types/config.js";
 import type { User } from "./types/auth.js";
 import { log } from "./helpers/log.js";
 import { setConfiguration } from "./helpers/config.js";
+
+log('pcsrt v0.1.1 | © 2025 Jining Liu');
 
 // Uninstaller
 if (argv.includes('--uninstall')) {
@@ -202,8 +204,9 @@ if (config.startStreamOnLaunch) {
 }
 
 let server: Bun.Server<{ user: string }>;
+let statusInterval: NodeJS.Timeout | undefined;
 
-startup();
+await startup();
 
 async function startup() {
     if (server) {
@@ -211,13 +214,19 @@ async function startup() {
         server.publish("connected", "REBOOT");
         await new Promise(res => setTimeout(res, 1000));
         server.stop(true);
-        try {
-            process.kill(gstProcess.pid!, 0);
-            gstProcess.kill("SIGINT");
-        } catch { }
+        if (gstProcess.pid) {
+            try {
+                process.kill(gstProcess.pid, 0);
+                gstProcess.kill("SIGINT");
+            } catch { }
+        }
         auth = await authFile.json();
         config = Configuration.fromJSON(await configFile.json());
         existingGstProcesses = await existingGstProcessesFile.json();
+    }
+
+    if (statusInterval) {
+        clearInterval(statusInterval);
     }
 
     server = serve({
@@ -258,34 +267,46 @@ async function startup() {
                 log(msg, `${ws.data.user}@${ws.remoteAddress}`);
 
                 switch (msg) {
+                    case "STATUS":
+                        ws.send(await status());
+                        return;
+                    case "AUTOSTATUS.OPTIN":
+                        ws.subscribe("status");
+                        return;
+                    case "AUTOSTATUS.OPTOUT":
+                        ws.unsubscribe("status");
+                        return;
                     case "START":
                         ws.send(`${await startGstPipeline()}`);
                         return;
                     case "STOP":
+                        if (!gstProcess.pid) return;
                         try {
-                            process.kill(gstProcess.pid!, 0);
+                            process.kill(gstProcess.pid, 0);
                             gstProcess.kill("SIGINT");
                         } catch { }
                         return;
                     case "RESTART":
-                        try {
-                            process.kill(gstProcess.pid!, 0);
-                            gstProcess.kill("SIGINT");
+                        if (gstProcess.pid) {
+                            try {
+                                process.kill(gstProcess.pid, 0);
+                                gstProcess.kill("SIGINT");
 
-                            for (let i = 0; i <= 50; i++) {
-                                try {
-                                    process.kill(gstProcess.pid!, 0);
-                                } catch {
-                                    break;
+                                for (let i = 0; i <= 50; i++) {
+                                    try {
+                                        process.kill(gstProcess.pid, 0);
+                                    } catch {
+                                        break;
+                                    }
+
+                                    if (i === 50) {
+                                        gstProcess.kill("SIGKILL");
+                                    }
+
+                                    await new Promise(res => setTimeout(res, 100));
                                 }
-
-                                if (i === 50) {
-                                    gstProcess.kill("SIGKILL");
-                                }
-
-                                await new Promise(res => setTimeout(res, 100));
-                            }
-                        } catch { }
+                            } catch { }
+                        }
 
                         ws.send(`${await startGstPipeline()} `);
                         return;
@@ -350,6 +371,25 @@ async function startup() {
             }
         }
     });
+
+    setInterval(async () => {
+        server.publish("status", await status());
+    }, 1000);
+}
+
+async function status(): Promise<'ON' | 'OFF'> {
+    if (!gstProcess.pid) {
+        await filterExistingGstProcesses();
+        return existingGstProcesses.length > 0 ? 'ON' : 'OFF';
+    };
+
+    try {
+        process.kill(gstProcess.pid, 0);
+        return 'ON';
+    } catch {
+        gstProcess = undefined as any;
+        return 'OFF';
+    }
 }
 
 log(chalk.green(`pcsrt server running on port ${config.port}`));
