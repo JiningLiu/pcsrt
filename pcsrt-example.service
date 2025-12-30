@@ -1,0 +1,14 @@
+[Unit]
+Description=pcsrt
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pcsrt
+Restart=on-failure
+User=USER
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

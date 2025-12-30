@@ -111,7 +111,7 @@ const configFilePath = `${HOME}/.config/pcsrt/config.json`;
 let configFile = file(configFilePath);
 
 if (!await configFile.exists()) {
-    log(chalk.yellow(`Configuration file not found, creating a new one at ${configFilePath} `));
+    log(chalk.yellow(`Configuration file not found, creating a new one at ${configFilePath}`));
 
     await configFile.write(JSON.stringify(new Configuration()));
     configFile = file(configFilePath);
@@ -167,9 +167,9 @@ async function killExistingGstProcesses() {
     for (const pid of existingGstProcesses) {
         try {
             process.kill(pid, "SIGKILL");
-            log(chalk.green(`Killed process ${pid} `));
+            log(chalk.green(`Killed process ${pid}`));
         } catch (e) {
-            log(chalk.red(`Failed to kill process ${pid}: ${e} `));
+            log(chalk.red(`Failed to kill process ${pid}: ${e}`));
         }
     }
     await existingGstProcessesFile.write(JSON.stringify([]));
@@ -233,7 +233,7 @@ async function startup() {
                     return new Response("Unauthorized", {
                         status: 401,
                         headers: {
-                            "WWW-Authenticate": 'Basic realm="PCSRT"',
+                            "WWW-Authenticate": 'Basic realm="pcsrt"',
                         },
                     });
                 }
@@ -255,11 +255,11 @@ async function startup() {
 
             async message(ws, message) {
                 const msg = message.toString().trim();
-                log(msg, `${ws.data.user} @${ws.remoteAddress} `);
+                log(msg, `${ws.data.user}@${ws.remoteAddress}`);
 
                 switch (msg) {
                     case "START":
-                        ws.send(`${await startGstPipeline()} `);
+                        ws.send(`${await startGstPipeline()}`);
                         return;
                     case "STOP":
                         try {
@@ -298,7 +298,7 @@ async function startup() {
                         return;
                     case "URIS":
                         let ipAddresses: string[] = [];
-                        for (const ip of (await $`hostname - I`.text()).trim().split(" ")) {
+                        for (const ip of (await $`hostname -I`.text()).trim().split(" ")) {
                             ipAddresses.push(ip.includes(":") ? `[${ip}]` : ip);
                         }
 
