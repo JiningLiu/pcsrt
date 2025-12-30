@@ -23,7 +23,7 @@ Make sure to configure your `/boot/firmware/config.txt` correctly for your perip
 ### Uninstall
 
 ```bash
-curl -fSL https://raw.githubusercontent.com/JiningLiu/pcsrt/HEAD/uninstall.sh | bash
+pcsrt --uninstall
 ```
 
 ## Development
