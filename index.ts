@@ -378,7 +378,7 @@ async function startup() {
 }
 
 async function status(): Promise<'ON' | 'OFF'> {
-    if (!gstProcess.pid) {
+    if (!gstProcess?.pid || false) {
         await filterExistingGstProcesses();
         return existingGstProcesses.length > 0 ? 'ON' : 'OFF';
     };
