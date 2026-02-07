@@ -10,7 +10,7 @@ import type { User } from "./types/auth.js";
 import { log } from "./helpers/log.js";
 import { setConfiguration } from "./helpers/config.js";
 
-log('pcsrt v0.1.1 | © 2025 Jining Liu');
+log('pcsrt v0.1.2 | © 2025 Jining Liu');
 
 // Uninstaller
 if (argv.includes('--uninstall')) {
